@@ -73,20 +73,22 @@ if __name__ == '__main__':
     else:
         display_width = args.width
 
+    pk1, pk2 = find_optimum_peaks(spectrum, l0, dl, w, Delta)
+    wi = np.searchsorted(w, display_width)
+
     print("Displaying w = " + str(w[wi]) + " nm")
     print("Calculated values of w:")
     print(list(w))
 
-    pk1, pk2 = find_optimum_peaks(spectrum, l0, dl, w, Delta)
-    wi = np.searchsorted(w, display_width)
-
     cmap = plt.get_cmap('viridis')
-    cnorm  = colors.Normalize(vmin=0.0, vmax=np.max(Delta[:,:,wi]))
+    cnorm  = colors.Normalize(vmin=0.0, vmax=1.0)
     scalarMap = cm.ScalarMappable(norm=cnorm, cmap=cmap)
     scalarMap.set_array(Delta)
 
+    d = Delta[:,:,wi]/np.max(Delta[:,:,wi]) # normalized data
+
     # np.flipud is used to get the vertical axis into the normal orientation
-    ax1.imshow(np.flipud(Delta[:,:,wi]), cmap=cmap, norm=cnorm, extent=(np.min(l0), np.max(l0), np.min(dl), np.max(dl)), aspect='auto')
+    ax1.imshow(np.flipud(d), cmap=cmap, norm=cnorm, extent=(np.min(l0), np.max(l0), np.min(dl), np.max(dl)), aspect='auto')
     ax1.plot(pk1[wi,1], pk1[wi,2], 'bo')
     ax1.plot(pk2[wi,1], pk2[wi,2], 'ro')
 
@@ -102,9 +104,9 @@ if __name__ == '__main__':
     axpbar.tick_params(axis='x', colors='w')
     axpbar.tick_params(axis='y', colors='w')
     axpbar.set_axes_locator(InsetPosition(ax1, [0.45, 0.91, 0.45, 0.05]))
-    cb1 = ColorbarBase(axpbar, cmap=cmap, norm=cnorm, orientation='horizontal')
+    cb1 = ColorbarBase(axpbar, cmap=cmap, norm=cnorm, orientation='horizontal', ticks=[0.0, 0.25, 0.5, 0.75, 1.0])
     cb1.outline.set_edgecolor('w')
-    cb1.set_label(r'$\Delta = A-B$', color='w')
+    cb1.set_label(r'$\Delta = A-B$ (arb.)', color='w')
 
     ax2.plot(spectrum[:,0], spectrum[:,1]/np.max(spectrum[:,1]), '-k')
 
@@ -115,7 +117,14 @@ if __name__ == '__main__':
     ax2.plot(xs, norm*gauss(xs, w[wi], pk2[wi,1]-pk2[wi,2]/2), color='red')
     ax2.plot(xs, norm*gauss(xs, w[wi], pk2[wi,1]+pk2[wi,2]/2), color='red')
 
+    ax2.text(0.025, 0.95, r'$\lambda_0 = $' + str(pk1[wi,1]) + ' nm', color='blue', ha='left', transform=ax2.transAxes)
+    ax2.text(0.025, 0.91, r'$\Delta \lambda = $' + str(pk1[wi,2]) + ' nm', color='blue', ha='left', transform=ax2.transAxes)
+    ax2.text(0.9975, 0.95, r'$\lambda_0 = $' + str(pk2[wi,1]) + ' nm', color='red', ha='right', transform=ax2.transAxes)
+    ax2.text(0.9975, 0.91, r'$\Delta \lambda = $' + str(pk2[wi,2]) + ' nm', color='red', ha='right', transform=ax2.transAxes)
+    ax2.text(0.5, 0.95, r'w = '+ str(w[wi]) + ' nm', color='black', ha='center', transform=ax2.transAxes)
+
     ax2.set_xlim(np.min(l0), np.max(l0))
+    ax2.set_ylim(0.0, 1.25)
     ax2.set_xlabel('wavelength (nm)')
     ax2.set_ylabel('spectral irradience (arb.)')
 

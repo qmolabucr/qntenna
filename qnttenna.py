@@ -166,18 +166,21 @@ def gauss(l, w, l0):
 Finds the optimum peaks for each value of w for power bandwidth cube
 
 Parameters:
-spectrum is the solar spectrum, witht he first column being wavelength, and the second column
+spectrum - the solar spectrum, witht he first column being wavelength, and the second column
 being irradiance
 
-$split is the wavelength to split the spectrum in two, will override the normal finding and
+split - the wavelength to split the spectrum in two, will override the normal finding and
 search for two peaks in each region. If split is None (default) will split at the spectral
 maximum
+
+buffer - exclude wavelengths split +/- buffer from the search, prevents misidentification
+in asymmetric cases
 
 Returns:
 two matricies, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
 the optimum peak at that value of w
 '''
-def find_optimum_peaks(spectrum, l0, dl, w, Delta, split=None):
+def find_optimum_peaks(spectrum, l0, dl, w, Delta, split=None, buffer=10):
     N = w.size
     if split is None:
         spmax = np.argmax(spectrum[:,1])
@@ -187,11 +190,12 @@ def find_optimum_peaks(spectrum, l0, dl, w, Delta, split=None):
     peak2 = np.zeros((N, 4))
     for i in range(N):
         try:
-            sep = np.searchsorted(l0, split)
-            ix1 = np.argmax(Delta[:,:sep,i])
-            lr1, lc1 = np.unravel_index(ix1, Delta[:,:sep,i].shape)
-            ix2 = np.argmax(Delta[:,sep:,i])
-            lr2, lc2 = np.unravel_index(ix2, Delta[:,sep:,i].shape)
+            sep1 = np.searchsorted(l0, split-buffer)
+            ix1 = np.argmax(Delta[:,:sep1,i])
+            lr1, lc1 = np.unravel_index(ix1, Delta[:,:sep1,i].shape)
+            sep2 = np.searchsorted(l0, split+buffer)
+            ix2 = np.argmax(Delta[:,sep2:,i])
+            lr2, lc2 = np.unravel_index(ix2, Delta[:,sep2:,i].shape)
 
             peak1[i, 0] = w[i]
             peak1[i, 1] = l0[lc1]
@@ -199,9 +203,9 @@ def find_optimum_peaks(spectrum, l0, dl, w, Delta, split=None):
             peak1[i, 3] = Delta[lr1, lc1, i]
 
             peak2[i, 0] = w[i]
-            peak2[i, 1] = l0[sep+lc2]
+            peak2[i, 1] = l0[sep2+lc2]
             peak2[i, 2] = dl[lr2]
-            peak2[i, 3] = Delta[lr2, sep+lc2,i]
+            peak2[i, 3] = Delta[lr2, sep2+lc2,i]
         except IndexError:
             print('find_optimum_peaks IndexError at w= ' + str(w[i]))
     return peak1, peak2

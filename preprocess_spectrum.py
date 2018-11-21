@@ -62,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument("-rN", "--reduceN", type=int, help="Re-sample, reducing the resolution of the spectrum so that is N points long")
     parser.add_argument("-l1", "--lstart", type=float, help='The start of the range of wavelength, unchanged by default')
     parser.add_argument("-l2", "--lstop", type=float, help='The end of the range of wavelength, unchanged by default')
-    parser.add_argument("-v", "--visible", action="store_true", help='Restrict wavelength to visible spectrum 380-750 nm')
+    parser.add_argument("-v", "--visible", action="store_true", help='Restrict wavelength to visible range 350-800 nm')
     args = parser.parse_args()
 
     if not args.lowpass and not args.reduce and not args.visible and (args.lstart is None) and (args.lstop is None):
@@ -84,8 +84,8 @@ if __name__ == '__main__':
             l2 = np.max(spectrum[:,0])
 
         if args.visible:
-            l1 = 380
-            l2 = 750
+            l1 = 350
+            l2 = 800
 
         ix1 = np.searchsorted(spectrum[:,0], l1)
         ix2 = np.searchsorted(spectrum[:,0], l2)
