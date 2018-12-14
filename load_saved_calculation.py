@@ -49,6 +49,7 @@ if __name__ == '__main__':
     helpstr = "Path to directory of saved output files, by default search to local calculations directory"
     parser.add_argument("savefile", help=helpstr)
     parser.add_argument("-w", "--width", type=float, help="Absorber width to display, by default displays the maximum")
+    parser.add_argument("-n", "--npeaks", type=float, help="Number of peaks to search for in the Delta parameter space")
     args = parser.parse_args()
     directory = args.savefile
 
@@ -73,7 +74,14 @@ if __name__ == '__main__':
     else:
         display_width = args.width
 
-    pk1, pk2 = find_optimum_peaks(spectrum, l0, dl, w, Delta)
+    if args.npeaks is None:
+        npeaks = 2
+    else:
+        npeaks = int(args.npeaks)
+
+    clrs = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+
+    peak = find_optimum_peaks(l0, dl, w, Delta, npeaks)
     wi = np.searchsorted(w, display_width)
 
     print("Displaying w = " + str(w[wi]) + " nm")
@@ -89,8 +97,8 @@ if __name__ == '__main__':
 
     # np.flipud is used to get the vertical axis into the normal orientation
     ax1.imshow(np.flipud(d), cmap=cmap, norm=cnorm, extent=(np.min(l0), np.max(l0), np.min(dl), np.max(dl)), aspect='auto')
-    ax1.plot(pk1[wi,1], pk1[wi,2], 'bo')
-    ax1.plot(pk2[wi,1], pk2[wi,2], 'ro')
+    for j in range(npeaks):
+        ax1.plot(peak[j][wi,1], peak[j][wi,2], 'o', c=clrs[j])
 
     ax1.set_ylabel(r'$\Delta \lambda$ (nm)')
     ax1.set_xlabel(r'$\lambda_{0}$ (nm)')
@@ -112,15 +120,11 @@ if __name__ == '__main__':
 
     xs = np.linspace(np.min(l0), np.max(l0), 400)
     norm = w[wi]*np.sqrt(2*np.pi)
-    ax2.plot(xs, norm*gauss(xs, w[wi], pk1[wi,1]-pk1[wi,2]/2), color='blue')
-    ax2.plot(xs, norm*gauss(xs, w[wi], pk1[wi,1]+pk1[wi,2]/2), color='blue')
-    ax2.plot(xs, norm*gauss(xs, w[wi], pk2[wi,1]-pk2[wi,2]/2), color='red')
-    ax2.plot(xs, norm*gauss(xs, w[wi], pk2[wi,1]+pk2[wi,2]/2), color='red')
-
-    ax2.text(0.025, 0.95, r'$\lambda_0 = $' + str(pk1[wi,1]) + ' nm', color='blue', ha='left', transform=ax2.transAxes)
-    ax2.text(0.025, 0.91, r'$\Delta \lambda = $' + str(pk1[wi,2]) + ' nm', color='blue', ha='left', transform=ax2.transAxes)
-    ax2.text(0.9975, 0.95, r'$\lambda_0 = $' + str(pk2[wi,1]) + ' nm', color='red', ha='right', transform=ax2.transAxes)
-    ax2.text(0.9975, 0.91, r'$\Delta \lambda = $' + str(pk2[wi,2]) + ' nm', color='red', ha='right', transform=ax2.transAxes)
+    for j in range(npeaks):
+        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]-peak[j][wi,2]/2), color=clrs[j])
+        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]+peak[j][wi,2]/2), color=clrs[j])
+        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.12, r'$\lambda_0 = $' + str(peak[j][wi,1]) + ' nm', color=clrs[j], ha='left')
+        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.07, r'$\Delta \lambda = $' + str(peak[j][wi,2]) + ' nm', color=clrs[j], ha='left')
     ax2.text(0.5, 0.95, r'w = '+ str(w[wi]) + ' nm', color='black', ha='center', transform=ax2.transAxes)
 
     ax2.set_xlim(np.min(l0), np.max(l0))

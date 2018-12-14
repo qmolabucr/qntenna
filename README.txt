@@ -22,7 +22,7 @@ INSTALLATION INSTRUCTIONS:
 qnttenna requires python (version 3) and the following python packages:
 
 numpy version 1.13+
-scipy version 1.0+
+scipy version 1.1+
 pathos version 0.2+
 matplotlib 2.0+ (for display scripts, not required for qnttenna module, but recommended)
 
@@ -105,9 +105,9 @@ For the parameter space defined by (lambda_0, Delta lambda, w)
 gauss(l,w,l0):
 Gaussian profile of an absorbing channel used in the calculation.
 
-find_optimum_peaks(spectrum, l0, dl, w, Delta):
-Finds two sets of peaks on either side of the spectral maximum (or another specified point) corresponding
-to the maxima of Delta in the parameter space (l0, dl, w)
+find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
+Finds npeaks sets of peaks in regions seperated by the npeaks-1 highest order local minima. Peaks correspond
+to the maxima of Delta in the parameter space (l0, dl, w). Requires a number of peaks to search for (default 2).
 
 load_spectrum_data(spectrumfile):
 Loads a spectrum file that is in standard format (see input data format above) and warns if the file is excessively

@@ -35,7 +35,7 @@ if __name__ == '__main__':
     calc_data, spectrum = delta_integral(spectrumfile, [10, 15, 25], autosave=False)
     [l0, dl, w, A, B, Delta] = calc_data
 
-    pk1, pk2 = find_optimum_peaks(spectrum, l0, dl, w, Delta)
+    pk1, pk2 = find_optimum_peaks(l0, dl, w, Delta, 2)
 
     display_width = 15 # nm
 

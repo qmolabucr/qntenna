@@ -31,6 +31,7 @@ Pathos version 0.2+
 import numpy as np
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
+from scipy.signal import argrelmin, peak_prominences
 
 from pathos.multiprocessing import ProcessingPool as Pool
 
@@ -163,53 +164,36 @@ def gauss(l, w, l0):
 #
 
 '''
-Finds the optimum peaks for each value of w for power bandwidth cube
+Finds the optimum peaks for each value of w for power bandwidth cube, using the divider algorithm
 
 Parameters:
-spectrum - the solar spectrum, witht he first column being wavelength, and the second column
-being irradiance
-
-split - the wavelength to split the spectrum in two, will override the normal finding and
-search for two peaks in each region. If split is None (default) will split at the spectral
-maximum
-
-buffer - exclude wavelengths split +/- buffer from the search, prevents misidentification
-in asymmetric cases
+- l0, dl, w the parameter space, standard notation
+- Delta, the power bandswidth A-B
+- npeaks the number of peak pairs to look for (default 2 for relativly simple spectra)
 
 Returns:
-two matricies, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
+A list of matricies, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
 the optimum peak at that value of w
 '''
-def find_optimum_peaks(spectrum, l0, dl, w, Delta, split=None, buffer=10):
+def find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
     N = w.size
-    if split is None:
-        spmax = np.argmax(spectrum[:,1])
-        split = spectrum[spmax,0]
+    peaks = []
+    for j in range(npeaks):
+        peaks.append(np.zeros((N, 4)))
 
-    peak1 = np.zeros((N, 4))
-    peak2 = np.zeros((N, 4))
     for i in range(N):
         try:
-            sep1 = np.searchsorted(l0, split-buffer)
-            ix1 = np.argmax(Delta[:,:sep1,i])
-            lr1, lc1 = np.unravel_index(ix1, Delta[:,:sep1,i].shape)
-            sep2 = np.searchsorted(l0, split+buffer)
-            ix2 = np.argmax(Delta[:,sep2:,i])
-            lr2, lc2 = np.unravel_index(ix2, Delta[:,sep2:,i].shape)
-
-            peak1[i, 0] = w[i]
-            peak1[i, 1] = l0[lc1]
-            peak1[i, 2] = dl[lr1]
-            peak1[i, 3] = Delta[lr1, lc1, i]
-
-            peak2[i, 0] = w[i]
-            peak2[i, 1] = l0[sep2+lc2]
-            peak2[i, 2] = dl[lr2]
-            peak2[i, 3] = Delta[lr2, sep2+lc2,i]
+            divs, maxes = _find_maxes_between_mins(npeaks-1, Delta[:,:,i])
+            for j in range(npeaks):
+                ix0, ix1 = maxes[j]
+                peaks[j][i, 0] = w[i]
+                peaks[j][i, 1] = l0[ix1]
+                peaks[j][i, 2] = dl[ix0]
+                peaks[j][i, 3] = Delta[ix0, ix1, i]
         except IndexError:
-            print('find_optimum_peaks IndexError at w= ' + str(w[i]))
-    return peak1, peak2
-#
+            print('Error at w= ' + str(w[i]))
+    return peaks
+# end find_optimum_peaks_div
 
 '''
 Loads in the spectrum data file, which sould be two columns, first column being wavelength
@@ -437,6 +421,48 @@ def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
     print('Calculations Complete in ' + str(datetime.timedelta(seconds=tf-t0)))
     return [l0, dl, w, ua, ub, du]
 #
+
+'''
+Finds the most topologically prominent minima (of the array summed along the x-axis) of d that divide the map into sections.
+Then finds the local maxima of each section.
+
+Parameters:
+ndivs - The number of divisions to search for
+d - the data to search
+
+Returns:
+divs - the x-axis indicies that divide up the array into sections containing maxima
+maxes - a list of tuples (row, col) of the indicies of the maxima
+'''
+def _find_maxes_between_mins(ndivs, d):
+    rows, cols = d.shape
+
+    # Find the minima along the x-axis
+    sd = np.sum(d, axis=0)
+    divs = argrelmin(sd)[0]
+    prom, lbase, rbase  = peak_prominences(-1.0*sd, divs)
+
+    # Pull out only the nmins most topologically prominent minima
+    args = np.argsort(prom)
+    prom = prom[args]
+    divs = divs[args]
+    st = int(len(divs) - ndivs)
+    divs = divs[st:]
+
+    divs = np.sort(divs) # put back in sorted order
+    ix1 = 0
+    maxes = []
+    for i in range(ndivs+1): # Find the maxima in each division
+        if i == ndivs:
+            ix2 = cols
+        else:
+            ix2 = divs[i]
+        ixf = np.argmax(d[:,ix1:ix2])
+        lr, lc = np.unravel_index(ixf, d[:,ix1:ix2].shape)
+        maxes.append((lr, ix1+lc))
+        ix1 = ix2
+    return divs, maxes
+# end find_maxes_between_mins
 
 '''
 Command prompt yes or no question
