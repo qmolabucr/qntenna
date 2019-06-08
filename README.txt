@@ -1,7 +1,7 @@
 Instructions for using the qnttenna.py code
 
 version 1.0
-last updated: November 2018
+last updated: June 2019
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
@@ -10,9 +10,10 @@ University of California, Riverside, USA
 
 DESCRIPTION:
 
-This code is published alongside [PAPER TITLE] and performs calculations described in that paper.
-The main result is taking an input solar spectrum and calculating the ideal absorption peaks for
-a two channel absorber by quieting a noisy antenna and optimizing power bandwidth. See paper for details.
+This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra' 
+and performs calculations described in that paper. The main result is taking an input solar spectrum and calculating 
+the ideal absorption peaks for a two channel absorber by quieting a noisy antenna and optimizing power bandwidth. 
+See the paper for model details.
 
 LICENSE:
 All rights reserved. (In the future this software may have some form of non-commercial public license)
@@ -36,7 +37,7 @@ COMMAND LINE INTERFACE INSTRUCTIONS:
 
 qnttenna.py was written with a command line interface, full options can be seen using:
 > python qnttenna.py -h
-but the most basic use of the program is to process a file of spectrum data (see data format below). For example,
+The most basic use of the program is to process a file of spectrum data (see data format below). For example,
 to process the included NREL-etr.txt file use the following command:
 > python qnttenna.py spectra\NREL-etr-visible.txt
 This will perform the calculation for absorber widths of 5,10,15,20,25,30 nanometers.
@@ -52,7 +53,7 @@ By default, the output will be saved to a local 'calculations' directory with a 
 calculation. To save to a different directory use the following argument:
 > python qnttenna.py spectra\NREL-etr-visible.txt -sf PATH\TO\SAVE\DIRECTORY
 
-In addition to qnttenna.py three other python scripts were included
+In addition to qnttenna.py four other python scripts were included
 
 - blackbody_qnttenna.py : A script that calculates and displays the results for a blackbody spectrum. Use this to test 
 the installation, as follows:
@@ -69,6 +70,12 @@ faster. There are several options, all of which can be viewed using
 but for long files we recommended the following option:
 > python preprocess_spectrum.py PATH\TO\FILE --reduce -sf PATH\TO\NEWFILE
 The --reduce option will re-sample the data so that it is 1000 data points long. 
+
+- discrete_toy_model.py: An implementation of the Quieting and Noisy Antenna model in the discrete limit. See section 
+S1.3 of the supplementary materials for more information about the model. Has three command line arguments corresponding
+to different parameters of the calculation. -n is the number of absorbing pairs, -ept is the number of potential absorption events
+per timestep and -p is phi, the free parameter that sets the probabilities.
+
 
 INPUT DATA FORMAT:
 
@@ -89,18 +96,18 @@ which is also the NREL ASTM ETR spectrum but restricted to the visible range.
 
 CODING INSTRUCTIONS:
 
-Users proficient as coding may wish to incorporate the qnttenna.py module into their own scripts.
+Users proficient at coding may wish to incorporate the qnttenna.py module into their own scripts.
 qnttenna.py module contains four public functions (following the standard conventions  that function names
 beginning with an underscore are considered private). Below are the basic descriptions of these functions,
 for more details look at the comments in qnttenna.py
 
-NOTE: Given that qnttenna.py uses the pathos.multiprocess module, a for of python's multiprocessing module,
+NOTE: Given that qnttenna.py uses the pathos.multiprocess module, a form of python's multiprocessing module,
 the calculation is unstable outside an "if __name__ == 'main'" block. If delta_integral starts throwing weird
 errors check that it is inside an "if __name__ == 'main'".
 
 delta_integral(spectrumfile, w):
-Calculates the Delta value described in [PAPER TITLE] as a function of an input solar spectrum.
-For the parameter space defined by (lambda_0, Delta lambda, w)
+Calculates the Delta value described in 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra' 
+as a function of an input solar spectrum. The integral is detailed in  Seaction S1.2 of the supplementary materials.
 
 gauss(l,w,l0):
 Gaussian profile of an absorbing channel used in the calculation.

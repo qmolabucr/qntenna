@@ -1,10 +1,8 @@
 '''
 qnttenna.py
 
-Quieting a Noisy attenna
-
 version 1.0
-last updated: November 2018
+last updated: June 2019
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
@@ -56,15 +54,15 @@ spectrumfile - path to the file containing the solar spectrum to perform the cal
 w - the width(s) of the absorbers, either a single floating point value or a numpy array of values
 
 lambda_0 - The range of center wavelengths to calculate over, if None (default) the range will be
-from the minumum wavelength of the spectrum to 1000nm in 2nm incremnts. If the range is 'full' it
+from the minimum wavelength of the spectrum to 1000nm in 2nm increments. If the range is 'full' it
 will use the full range of the input spectrum in 2 nm increments. If it is a tuple with two values,
-the range will be between those two values in 2 nm incremnts.  If it is a numpy array, those values
+the range will be between those two values in 2 nm increments.  If it is a numpy array, those values
 will be used. User specified ranges exceeding the solar spectrum range will throw a ValueError, user
-specfied ranges that have poor resolution of spectral features, may yeild unrelaible values.
+specified ranges that have poor resolution of spectral features, may yield unreliable values.
 
 delta_lambda - The range of the Delta Lambda parameter space. If None (default) the range will be
 from min(w) to 5*max(w) in 1 nm increments. If it is a tuple with two values, the range will be
-between those two values in 1 nm incremnts. If it is a numpy array, those values will be used.
+between those two values in 1 nm increments. If it is a numpy array, those values will be used.
 It is recommended that user specified ranges include 2\sqrt(2)w (the theoretical optimum).
 
 autosave - If true will automatically save the output of the calculation to the local directory calculations
@@ -72,7 +70,7 @@ autosave - If true will automatically save the output of the calculation to the 
 optimize - If true (default) will use pathos.multiprocess to parallelize the calculation on multiple
 processor cores, if False will limit the calculation to a single processor.
 
-warning - If true (default) will display a warning for excessivly long spectrum files
+warning - If true (default) will display a warning for excessively long spectrum files
 
 Returns:
 1- Array with parameters and calculated values in the form:
@@ -96,7 +94,7 @@ def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=F
             except ValueError:
                 raise ValueError("Width parameter, w, must be a numpy array or float")
             w = [w]
-    #
+
 
     # Set the lambda_0 parameter
     if lambda_0 is None:
@@ -146,7 +144,7 @@ def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=F
 
 
 '''
-Gaussian profile of an absorbing channel used in the Noisty Antenna Model
+Gaussian profile of an absorbing channel used in the Noisy Antenna Model
 
 Parameters:
 l - numpy array of wavelength values to calculate over
@@ -168,11 +166,11 @@ Finds the optimum peaks for each value of w for power bandwidth cube, using the 
 
 Parameters:
 - l0, dl, w the parameter space, standard notation
-- Delta, the power bandswidth A-B
-- npeaks the number of peak pairs to look for (default 2 for relativly simple spectra)
+- Delta, the power bandwidth A-B
+- npeaks the number of peak pairs to look for (default 2 for relatively  simple spectra)
 
 Returns:
-A list of matricies, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
+A list of arrays, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
 the optimum peak at that value of w
 '''
 def find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
@@ -196,7 +194,7 @@ def find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
 # end find_optimum_peaks_div
 
 '''
-Loads in the spectrum data file, which sould be two columns, first column being wavelength
+Loads in the spectrum data file, which should be two columns, first column being wavelength
 and second column being irradiance.
 
 Parameters:
@@ -235,7 +233,7 @@ Saves the output of the calculation as text files, either to a local directory o
 The output will be saved into a directory, the name of which is determined by the local time when
 the function is called (unless dirname is specified).
 
-The format is space seperated data files containing:
+The format is space separated data files containing:
 - 1D arrays with the values of l0, dl, and w in files l0.txt, dl.txt, w.txt
 - 2D arrays in a series of files Delta_[INDEX].txt where [INDEX] is the index of w that array corresponds to
 
@@ -247,7 +245,7 @@ calc_data - the output of the calculation in the format of delta_integral, [l0, 
 
 spectrum - is the spectra that was input into this calculation, standard format
 
-directory - The path to a directory to save the files (will be created if it doesn't exist), a local direcotry
+directory - The path to a directory to save the files (will be created if it doesn't exist), a local directory
 called calculations by default.
 
 dirname - Name of the directory to save the files to, if None (default) will generate a name based
@@ -276,7 +274,7 @@ Multipurpose parallel processing
 Takes a function and an array of arguments, evaluates the function with the given arguments for each point,
 processing in parallel using ncores number of parallel processes. Returns the results as a numpy ndarray
 
-args_array is the array of arguments to the input function $func. $func can only accept one argement,
+args_array is the array of arguments to the input function $func. $func can only accept one argument,
 but it can be a list or tuple
 
 Will display progress if display is True
@@ -322,7 +320,7 @@ integrand for a single absorber on the positive side of lambda_0
 
 $l is lambda the integration variable
 $l0 is lambda_0 the center wavelength
-$dl is Delta lambda, the absorber seperation
+$dl is Delta lambda, the absorber separation
 $w is the Gaussian width of the peaks
 $spectrum is an interpolation function, from data describing the spectrum
 '''
@@ -335,7 +333,7 @@ integrand for a single absorber on the negative side of lambda_0
 
 $l is lambda the integration variable
 $l0 is lambda_0 the center wavelength
-$dl is Delta lambda, the absorber seperation
+$dl is Delta lambda, the absorber separation
 $w is the Gaussian width of the peaks
 $spectrum is an interpolation function, from data describing the spectrum
 '''
@@ -347,16 +345,16 @@ def _integrand_minus(l, l0, dl, w, spectrum):
 Calculated the power bandwidth, Delta U, for the given spectral data.
 
 Parameters:
-$spectral_data, the spectrum to caluclate Delta U for, two columns,
+$spectral_data, the spectrum to calculate Delta U for, two columns,
 first column is wavelength, second column is normalized spectral data. Will calculate Delta U over
 the whole range of the spectrum. Spectrum should be fairly free of noise, filter noisy data first.
 
-w is a numpy array containg the peak widths to calculate for
+w is a numpy array containing the peak widths to calculate for
 
 $lstep is the resolution of lambda_0 in nm, default 2 nm
 
 $dlmin, $dlmax, $dlN are the minimum and maximum amounts of Delta lambda to calculate, and
-the number of values to caluclate Delta lambda for
+the number of values to calculate Delta lambda for
 
 Returns:
 Returns an array with parameters and calculated values in the form:
@@ -431,8 +429,8 @@ ndivs - The number of divisions to search for
 d - the data to search
 
 Returns:
-divs - the x-axis indicies that divide up the array into sections containing maxima
-maxes - a list of tuples (row, col) of the indicies of the maxima
+divs - the x-axis indices that divide up the array into sections containing maxima
+maxes - a list of tuples (row, col) of the indices of the maxima
 '''
 def _find_maxes_between_mins(ndivs, d):
     rows, cols = d.shape
@@ -462,7 +460,7 @@ def _find_maxes_between_mins(ndivs, d):
         maxes.append((lr, ix1+lc))
         ix1 = ix2
     return divs, maxes
-# end find_maxes_between_mins
+# end _find_maxes_between_mins
 
 '''
 Command prompt yes or no question
@@ -475,7 +473,7 @@ def _yes_or_no(question):
         if reply[:1] == 'n':
             return False
         print("invalid answer")
-#
+# end _yes_or_no
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -539,4 +537,3 @@ if __name__ == "__main__":
     calc_data, spectrum = delta_integral(args.path, w, lambda_0=lambda0, autosave=autosave, optimize=optimize, warning=warn)
     if not autosave:
         save_calculation(calc_data, spectrum, directory=args.savefile)
-#

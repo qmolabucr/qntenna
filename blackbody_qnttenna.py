@@ -1,9 +1,24 @@
 '''
-A test script for qnttenna module
+preprocess_spectrum.py
 
-Displays the output of a Delta calculation for a solar spectrum given by
-a 5500K blackbody spectrum.
+version 1.0
+last updated: June 2019
+
+by Trevor Arp
+Quantum Materials Optoelectronics Laboratory
+Department of Physics and Astronomy
+University of California, Riverside, USA
+
+License:
+All rights reserved. (In the future this software may have some form of non-commercial public license)
+
+Description:
+A testing script for qnttenna module. Displays the output of a Delta calculation for a solar spectrum
+given by a 5500K ideal blackbody spectrum.
+
+See accompanying README.txt for instructions on using this code
 '''
+
 from qnttenna import delta_integral, load_spectrum_data, find_optimum_peaks, gauss
 
 from matplotlib.colorbar import ColorbarBase

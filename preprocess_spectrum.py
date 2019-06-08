@@ -1,6 +1,24 @@
 '''
+preprocess_spectrum.py
+
+version 1.0
+last updated: June 2019
+
+by Trevor Arp
+Quantum Materials Optoelectronics Laboratory
+Department of Physics and Astronomy
+University of California, Riverside, USA
+
+License:
+All rights reserved. (In the future this software may have some form of non-commercial public license)
+
+Description:
 A script to pre-process spectra to make them better suited for speedy qntenna.py calculations
+
+See accompanying README.txt for instructions on using this code
 '''
+
+
 import numpy as np
 from qnttenna import load_spectrum_data, _yes_or_no
 
