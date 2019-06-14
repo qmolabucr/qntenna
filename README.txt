@@ -8,15 +8,14 @@ Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
+All rights reserved.
+
 DESCRIPTION:
 
 This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra' 
 and performs calculations described in that paper. The main result is taking an input solar spectrum and calculating 
 the ideal absorption peaks for a two channel absorber by quieting a noisy antenna and optimizing power bandwidth. 
 See the paper for model details.
-
-LICENSE:
-All rights reserved. (In the future this software may have some form of non-commercial public license)
 
 INSTALLATION INSTRUCTIONS:
 

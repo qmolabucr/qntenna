@@ -9,8 +9,7 @@ Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
-License:
-All rights reserved. (In the future this software may have some form of non-commercial public license)
+All rights reserved.
 
 Description:
 A script to pre-process spectra to make them better suited for speedy qntenna.py calculations
