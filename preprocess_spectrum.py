@@ -1,15 +1,17 @@
 '''
 preprocess_spectrum.py
 
-version 1.0
-last updated: June 2019
+version 1.1
+last updated: March 2020
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
-All rights reserved.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
 A script to pre-process spectra to make them better suited for speedy qntenna.py calculations
@@ -17,44 +19,42 @@ A script to pre-process spectra to make them better suited for speedy qntenna.py
 See accompanying README.txt for instructions on using this code
 '''
 
-
 import numpy as np
+from matplotlib import pyplot as plt
+
 from qnttenna import load_spectrum_data, _yes_or_no
 
 from scipy.signal import butter, filtfilt
 
-import numpy as np
-import matplotlib.pyplot as plt
-from os.path import join, exists
 import argparse
 
-'''
-A generic lowpass filter
-
-Parameters:
-data is the data to be lowpassed
-
-cutoff is the cutoff frequency in units of the nyquist frequency, must be less than 1
-
-samplerate is the smaple rate in Hz
-
-'''
 def lowpass(data, cutoff=0.05, samprate=1.0):
+    '''
+    A generic lowpass filter, based on a Butterworth filter.
+
+    Args:
+        data : The data to be lowpassed, considered to be sampled at 1 Hz
+        cutoff (float, optional) : The cutoff frequency in units of the nyquist frequency, must be less than 1
+        samprate (float, optional) : is the sample rate in Hz
+    '''
     b,a = butter(2,cutoff/(samprate/2.0), btype='low', analog=0, output='ba')
     data_f = filtfilt(b,a,data)
     return data_f
 #
 
-'''
-Reduces the resolution of the spectrum, so that the size is less than 1000 points, by interpolating
-then resamplign the data.
-
-Parameters:
-spectrum is the spectral singal, in the standard two-column format
-newsize is the size to resample to (default 1000), if spectrum is maller than this will return the
-original array
-'''
 def reduce_by_interpolation(spectrum, newsize=1000):
+    '''
+    Reduces the resolution of the spectrum, so that the size is less than 1000 points, by interpolating
+    then resamplign the data.
+
+    Args:
+        spectrum : the spectral singal, in the standard two-column format
+        newsize : the size to resample to (default 1000), if spectrum is smaller than this
+            will return the original array
+
+    Returns:
+        A reduced spectrum.
+    '''
     rows, cols = spectrum.shape
     if rows <= newsize:
         print("Warning: Spectral data already less than "+str(newsize)+' data points, no reduction performed')

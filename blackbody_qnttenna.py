@@ -1,15 +1,17 @@
 '''
 preprocess_spectrum.py
 
-version 1.0
-last updated: June 2019
+version 1.1
+last updated: March 2020
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
-All rights reserved.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
 A testing script for qnttenna module. Displays the output of a Delta calculation for a solar spectrum
@@ -18,7 +20,7 @@ given by a 5500K ideal blackbody spectrum.
 See accompanying README.txt for instructions on using this code
 '''
 
-from qnttenna import delta_integral, load_spectrum_data, find_optimum_peaks, gauss
+from qnttenna import delta_integral, find_optimum_peaks, gauss
 
 from matplotlib.colorbar import ColorbarBase
 import matplotlib.colors as colors
@@ -69,7 +71,7 @@ if __name__ == '__main__':
 
     ax1.set_ylabel(r'$\Delta \lambda$ (nm)')
     ax1.set_xlabel(r'$\lambda_{0}$ (nm)')
-    ax1.set_title(r'$\Delta$ for T = 5500K Blackbody Spectrum, w =' + str(display_width) + ' nm')
+    ax1.set_title(r'$\Delta^{op}$ for T = 5500K Blackbody Spectrum, w =' + str(display_width) + ' nm')
 
     axpbar = plt.axes([0, 0, 101, 101], zorder=2)
     axpbar.spines['bottom'].set_color('w')
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     axpbar.set_axes_locator(InsetPosition(ax1, [0.45, 0.91, 0.45, 0.05]))
     cb1 = ColorbarBase(axpbar, cmap=cmap, norm=cnorm, orientation='horizontal', ticks=[0.0, 0.25, 0.5, 0.75, 1.0])
     cb1.outline.set_edgecolor('w')
-    cb1.set_label(r'$\Delta = A-B$ (arb.)', color='w')
+    cb1.set_label(r'$\Delta^{op}$ (arb.)', color='w')
 
     ax2.plot(spectrum[:,0], spectrum[:,1]/np.max(spectrum[:,1]), '-k')
 
@@ -101,8 +103,6 @@ if __name__ == '__main__':
     ax2.set_xlim(np.min(l0), np.max(l0))
     ax2.set_xlabel('wavelength (nm)')
     ax2.set_ylabel('spectral irradience (arb.)')
-
-    fig1.show()
 
     plt.show()
 #

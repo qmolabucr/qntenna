@@ -1,15 +1,17 @@
 '''
 discrete_toy_model.py
 
-version 1.0
-last updated: June 2019
+version 1.1
+last updated: March 2020
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
-All rights reserved.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
 A visualization of a simple discrete model of a finite number of absorbers, see section S1.3 of the
@@ -30,15 +32,16 @@ import argparse
 
 seed = randint(0,2**31)
 
-'''
-Defines the relationship between the probabilities Pa and Pb bsed on the two-channel regulating
-condition: Pa*Ua + Pb*Ub = Omega
-
-Returns:
-- slope, intercept : The slope and intercept of the line relating Pa and Pb, i.e. Pa = slope*Pb + intercept
-- Pmin, Pmax, the minimum and maximum values of Pb
-'''
 def P_regulation_line(Ub, Ua, Omega):
+    '''
+    Defines the relationship between the probabilities Pa and Pb based on the two-channel regulating
+    condition: Pa*Ua + Pb*Ub = Omega
+
+    Returns:
+        A tuple containing (slope, intercept, Pmin, Pmax), where:
+            slope, intercept are the slope and intercept of the line relating Pa and Pb,
+            i.e. Pa = slope*Pb + intercept. Pmin, Pmax, the minimum and maximum values of Pb
+    '''
     Pmin = (Ub-Omega)/(Ub-Ua)
     Pmax = Omega / Ua
     slope = -(Ua / Ub)
@@ -46,11 +49,11 @@ def P_regulation_line(Ub, Ua, Omega):
     return slope, intercept, Pmin, Pmax
 #
 
-'''
-Samples a uniform distribution with two probabilities, returns 1 with probability p, returns -1 with
-probability q returns 0 with probability 1-p-q.
-'''
 def pq_sample(p, q, N=100):
+    '''
+    Samples a uniform distribution with two probabilities, returns 1 with probability p, returns -1 with
+    probability q returns 0 with probability 1-p-q.
+    '''
     if p+q > 1.0001:
         print("WARNING pq_sample: Sum of input probabilities (" +str(p+q) + ") is greater than 1")
     r = np.random.uniform(size=N)
@@ -64,10 +67,10 @@ def pq_sample(p, q, N=100):
     return out
 #
 
-'''
-Averages a timeseries over N absorption events, resulting in a series with N events per timestep
-'''
 def finite_avg(series, N):
+    '''
+    Averages a timeseries over N absorption events, resulting in a series with N events per timestep
+    '''
     M = len(series)
     if M//N == (M-1)//N:
         l = M//N + 1
@@ -79,20 +82,21 @@ def finite_avg(series, N):
     return output
 # end finite_avg
 
-'''
-The simulation of N absorbing pairs, with the regulation condition enforced
-
-Parameters:
-- N the number of absorbing paris
-- Ub and Ua, the low and high values of the absorbing pairs
-- Omega, the equilibrium value of the absorbing pairs
-- phi, the free parameters that sets the probabilities in the equilibrium condition.
-- modtype, the type of external modulation, either 'random' or 'constant'
-- amp, the amplitude of the external modulation
-- length, the number of absorption events to calculate for
-- extmodlength, the length of the external modulation in terms of the number of absorbing events
-'''
 def N_regulated_absorbers(N, Ub, Ua, Omega, phi, modtype='random', amp=0.25, length=500, extmodlength=100):
+    '''
+    The simulation of N absorbing pairs, with the regulation condition enforced
+
+    Args:
+        N : the number of absorbing paris
+        Ub : the low value of the absorbing pairs
+        Ua : the high value of the absorbing pairs
+        Omega : the equilibrium value of the absorbing pairs
+        phi : the free parameters that sets the probabilities in the equilibrium condition.
+        modtype : the type of external modulation, either 'random' or 'constant'
+        amp : Amplitude of the external modulation
+        length : Number of absorption events to calculate for
+        extmodlength : Length of the external modulation in terms of the number of absorbing events
+    '''
     m, b, Pb_min, Pb_max = P_regulation_line(Ub, Ua, Omega)
     Pb = Pb_min*(1.0-phi) + Pb_max*phi
     Pa = m*Pb + b
@@ -121,24 +125,32 @@ def N_regulated_absorbers(N, Ub, Ua, Omega, phi, modtype='random', amp=0.25, len
     return E
 # N_regulated_absorbers
 
-'''
-A one dimensional Gaussian function given by
-
-f(x,y) = A*Exp[ -(x-x0)^2/(2*sigma^2)]
-'''
 def gaussfunc(x, A, x0, sigma):
+    '''
+    A one dimensional Gaussian function given by
+
+    f(x,y) = A*Exp[ -(x-x0)^2/(2*sigma^2)]
+    '''
     return A*np.exp(-(x-x0)**2/(2*sigma**2))
 # end gauss
 
-'''
-Fits data x and y to a symmetric exponential function defined by gaussfunc
-
-Returns the fit parameters.
-
-Default parameters:
-p0 is the starting fit parameters, leave as-1 to estimate starting parameters from data
-'''
 def gauss_fit(x, y, p0=-1):
+    '''
+    Fits data to a gaussian function defined by math.gauss
+
+    Returns the fit parameters and the errors in the fit parameters as (p, perr)
+
+    Args:
+        x : The independent variable
+        y : The dependent varaible
+        p0 (optional): The initial parameters for the fitting function. If None (default) will estimate starting parameters from data
+
+    Returns:
+        (p, perr) where
+            p is the fitting parameters that optimize the fit, or the initial paramters
+            if the fit failed. perr is the estimated error in the parameters, or zero
+            if the fit failed.
+    '''
     l = len(y)
     if len(x) != l :
         print("Error gauss_fit: X and Y data must have the same length")
@@ -153,22 +165,23 @@ def gauss_fit(x, y, p0=-1):
             warnings.simplefilter("ignore")
             p, plconv = curve_fit(gaussfunc, x, y, p0=p0)
     except Exception as e:
+        print(e)
         p = p0
     return p
 # end gauss_fit
 
-'''
-Takes a histogram and returns the output of np.histogram, plus the average bin values
-
-Parameters:
-$bins is passed directly to numpy.histogram
-$density is the density parameter to pass to histogram, if true normalizes to probability density
-
-Returns:
-- histogram values
-- The average values of the bins (not the bin edges)
-'''
 def avg_bin_histogram(data, bins, density=False):
+    '''
+    Takes a histogram and returns the output of np.histogram, plus the average bin values
+
+    Args:
+        bins : number of bins is passed directly to numpy.histogram
+        density : if true normalizes to probability density
+
+    Returns:
+        (hist, avg_bins) where hist is the histogram values and  bins is the average values
+        of the bins (not the bin edges)
+    '''
     hist, edges = np.histogram(data, bins=bins, density=density)
     M = len(edges)
     avg_bins = np.zeros(M-1)
@@ -177,17 +190,19 @@ def avg_bin_histogram(data, bins, density=False):
     return hist, avg_bins
 # avg_bin_histogram
 
-'''
-Plots the histrogram of the excitation energy.
-
-Parameters:
-- ax1, the matplotlib axes to plot on
-- sequence is the energy timeseries to calculate the histogram for
-- Ua, Ub, N the energy values and number of absorbers, to display on the y-axis.
-- fit, the guassian fit to the intial histogram, will calculate if None
-- nbins, the number of histogram bins
-'''
 def excitation_histogram(ax1, sequence, Ua, Ub, N, fit=None, nbins=34):
+    '''
+    Plots the histrogram of the excitation energy.
+
+    Args:
+        ax1 : the matplotlib axes to plot on
+        sequence : the energy timeseries to calculate the histogram for
+        Ua : the lower energy value
+        Ub : the upper energy value
+        N :  the number of absorbers, to display on the y-axis.
+        fit : the guassian fit to the intial histogram, will calculate if None
+        nbins : the number of histogram bins
+    '''
     x1 = 0
     x2 = 2*N
     freq_l, vals_l = avg_bin_histogram(sequence, nbins, density=True)
@@ -229,18 +244,18 @@ def excitation_histogram(ax1, sequence, Ua, Ub, N, fit=None, nbins=34):
         ax1.plot(fit, ftx, '-', color='black')
 # show_excitation_histogram
 
-'''
-Calculate the timeseries to display.
-
-Parameters:
-- N, the number of absorbing pairs
-- du, the values of Delta to calculate for
-- tmax the number of timesteps that will be displayed in the timeseries plot
-- phi, the probability parameter
-- Omega=1.0, the central energy value
-- avg_steps=1, the number of absorption events to average over for each timestep.
-'''
 def calc_timeseries(N, du, tmax, phi, Omega=1.0, avg_steps=1):
+    '''
+    Calculate the timeseries to display.
+
+    Args:
+        N : the number of absorbing pairs
+        du : the values of Delta to calculate for
+        tmax : the number of timesteps that will be displayed in the timeseries plot
+        phi : the probability parameter
+        Omega : the central energy value
+        avg_steps : the number of absorption events to average over for each timestep.
+    '''
     Ub = Omega-du/2
     Ua = Omega+du/2
     extmodlength = 20*avg_steps

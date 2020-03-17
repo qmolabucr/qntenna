@@ -1,20 +1,23 @@
 '''
 qnttenna.py
 
-version 1.0
-last updated: June 2019
+version 1.1
+last updated: March 2020
 
 by Trevor Arp
 Quantum Materials Optoelectronics Laboratory
 Department of Physics and Astronomy
 University of California, Riverside, USA
 
-All rights reserved.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
-This code is published alongside [PAPER TITLE] and performs calculations described in that paper.
-The main result is taking an input solar spectrum and calculating the ideal absorption peaks for
-a two channel absorber by quieting a noisy antenna and optimizing power bandwidth. See paper for details.
+This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic lightharvesting
+spectra' and performs calculations described in that paper. The main result is taking an input solar
+spectrum and calculating the ideal absorption peaks for a two channel absorber by quieting a noisy
+antenna and optimizing power bandwidth. See paper for details.
 
 See accompanying README.txt for instructions on using this code
 
@@ -38,49 +41,54 @@ from os.path import join, exists
 from os import mkdir
 import argparse
 
-__version__ = 1.0
+__version__ = 1.1
 
-'''
-Calculates the Delta value described in [PAPER TITLE] as a function of an input solar spectrum.
-        /\
-Delta = | [a(lambda) - b(lambda)]I(lambda)dlambda
-       \/
-For the parameter space defined by (lambda_0, Delta lambda, w)
 
-Parameters:
-spectrumfile - path to the file containing the solar spectrum to perform the calculation on
-
-w - the width(s) of the absorbers, either a single floating point value or a numpy array of values
-
-lambda_0 - The range of center wavelengths to calculate over, if None (default) the range will be
-from the minimum wavelength of the spectrum to 1000nm in 2nm increments. If the range is 'full' it
-will use the full range of the input spectrum in 2 nm increments. If it is a tuple with two values,
-the range will be between those two values in 2 nm increments.  If it is a numpy array, those values
-will be used. User specified ranges exceeding the solar spectrum range will throw a ValueError, user
-specified ranges that have poor resolution of spectral features, may yield unreliable values.
-
-delta_lambda - The range of the Delta Lambda parameter space. If None (default) the range will be
-from min(w) to 5*max(w) in 1 nm increments. If it is a tuple with two values, the range will be
-between those two values in 1 nm increments. If it is a numpy array, those values will be used.
-It is recommended that user specified ranges include 2\sqrt(2)w (the theoretical optimum).
-
-autosave - If true will automatically save the output of the calculation to the local directory calculations
-
-optimize - If true (default) will use pathos.multiprocess to parallelize the calculation on multiple
-processor cores, if False will limit the calculation to a single processor.
-
-warning - If true (default) will display a warning for excessively long spectrum files
-
-Returns:
-1- Array with parameters and calculated values in the form:
-[l0, dl, w, A, B, Delta]
-Where l0, dl, w are all parameters, and A, B, Delta are the powers in the two channels and
-the power bandwidth respectively as 3D numpy arrays with dl for rows, l0 for columns and w for
-the third axis
-
-2 - The spectrum data loaded from spectrumfile
-'''
 def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=False, optimize=True, warning=True):
+    '''
+    Calculates the Delta^op value described in 'Quieting a noisy antenna reproduces
+    photosynthetic light harvesting spectra' as a function of an input solar spectrum.
+               /\
+    Delta^op = | [a(lambda) - b(lambda)]I(lambda)dlambda
+              \/
+    For the parameter space defined by (lambda_0, Delta lambda, w)
+
+    Warning: For any non-ideal spectrum the optimization landscape is nontrivial, especially
+    at small w. There may be multiple maxima in the calculation that are nearly degenerate,
+    or spurious optima not allowed due to operable bandwidth considerations. It is
+    recommended that the user read supplement section S1 and S2 in depth to understand
+    the complexities of this calculation.
+
+    Args:
+        spectrumfile : path to the file containing the solar spectrum to perform the calculation on
+        w : the width(s) of the absorbers, either a single floating point value or
+            a numpy array of values
+        lambda_0 : The range of center wavelengths to calculate over, if None (default) the
+            range will be from the minimum wavelength of the spectrum to 1000nm in 2nm
+            increments. If it is a tuple with two values, the range will be between those
+            two values in 2 nm increments.  If it is a numpy array, those values will be
+            used. User specified ranges exceeding the solar spectrum range will throw a
+            ValueError, user specified ranges that have poor resolution of spectral features,
+            may yield unreliable values.
+        delta_lambda : The range of the Delta Lambda parameter space. If None (default) the
+            range will be from min(w) to 5*max(w) in 1 nm increments. If it is a tuple with
+            two values, the range will be between those two values in 1 nm increments. If
+            it is a numpy array, those values will be used. It is recommended that user
+            specified ranges include 2\sqrt(2)w (the theoretical optimum).
+        autosave : If true will automatically save the output of the calculation to the
+            local directory calculations.
+        optimize - If true (default) will use pathos.multiprocess to parallelize the
+            calculation on multiple processor cores, if False will limit the calculation
+            to a single processor.
+        warning - If true (default) will display a warning for excessively long spectrum files
+
+    Returns:
+        A tuple containing the calulated values and spectrum data, (calc_data, spectrum_data).
+            Where the calc_data is an array with [l0, dl, w, A, B, Delta^op].
+            Where l0, dl, w are all parameters, and A, B, Delta are the powers in
+            the two channels and the power bandwidth respectively as 3D numpy
+            arrays with dl for rows, l0 for columns and w for the third axis.
+    '''
     spectral_data = load_spectrum_data(spectrumfile, warn=warning)
 
     # Set the w parameter
@@ -141,38 +149,48 @@ def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=F
     return calc_data, spectral_data
 #
 
-
-'''
-Gaussian profile of an absorbing channel used in the Noisy Antenna Model
-
-Parameters:
-l - numpy array of wavelength values to calculate over
-l0 - the center wavelength of the Gaussian
-w - the width of the Gaussian
-
-Returns:
-Numpy array containing the Gaussian profile of an absorbing channel:
-     1
------------- exp[-(l-l0)^2 / w^2]
-w*\sqrt(2*pi)
-'''
 def gauss(l, w, l0):
+    '''
+    Gaussian profile of an absorbing channel used in the Noisy Antenna Model:
+         1
+    ------------ exp[-(l-l0)^2 / w^2]
+    w*\sqrt(2*pi)
+
+    Args:
+        l : numpy array of wavelength values to calculate over
+        l0 : the center wavelength of the Gaussian
+        w : the width of the Gaussian
+
+    Returns:
+        Numpy array containing the Gaussian profile of an absorbing channel.
+    '''
     return (1.0/(w*np.sqrt(2*np.pi)))*np.exp(-1.0*((l-l0)/w)**2)
 #
 
-'''
-Finds the optimum peaks for each value of w for power bandwidth cube, using the divider algorithm
-
-Parameters:
-- l0, dl, w the parameter space, standard notation
-- Delta, the power bandwidth A-B
-- npeaks the number of peak pairs to look for (default 2 for relatively  simple spectra)
-
-Returns:
-A list of arrays, one for each optimum peak, where each row gives [w[i], l0, dl, Delta] for
-the optimum peak at that value of w
-'''
 def find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
+    '''
+    Finds the optimum peaks for each value of w for power bandwidth cube, using the
+    divider algorithm
+
+    Warning: For any non-ideal spectrum the optimization landscape is nontrivial,
+    especially at small w. There may be multiple maxima in the calculation that are
+    nearly degenerate, or spurious optima not allowed due to operable bandwidth
+    considerations. It is recommended that the user read supplement section S2 in
+    depth to understand the complexities of this calculation. This function finds the
+    highest peaks in the optimization landscape, which is the start, but not the end,
+    of any analysis.
+
+    Args:
+        l0 : the \lambda_{0} parameter space, standard notation
+        dl : the \Delta \lambda parameter space, standard notation
+        w : the width parameter space, standard notation
+        Delta : the power bandwidth optimization parameter
+        npeaks : the number of peak pairs to look for (default 2 for relatively  simple spectra)
+
+    Returns:
+        A list of arrays, one for each optimum peak, where each row gives
+            [w[i], l0, dl, Delta] for the optimum peak at that value of w
+    '''
     N = w.size
     peaks = []
     for j in range(npeaks):
@@ -190,22 +208,21 @@ def find_optimum_peaks(l0, dl, w, Delta, npeaks=2):
         except IndexError:
             print('Error at w= ' + str(w[i]))
     return peaks
-# end find_optimum_peaks_div
+# end find_optimum_peaks
 
-'''
-Loads in the spectrum data file, which should be two columns, first column being wavelength
-and second column being irradiance.
-
-Parameters:
-spectrumfile - path to the spectrum file
-
-warn - if True (default) will warn the user when the spectral data is over 1000 points
-
-Returns:
-Spectral data as a two-column numpy array
-
-'''
 def load_spectrum_data(spectrumfile, warn=True):
+    '''
+    Loads in the spectrum data file, which should be two columns, first column being
+    wavelength and second column being irradiance.
+
+    Args:
+        spectrumfile - path to the spectrum file.
+        warn - if True (default) will warn the user when the spectral data is over
+            1000 points.
+
+    Returns:
+        Spectral data as a two-column numpy array
+    '''
     s = spectrumfile.split('.')
     if s[len(s)-1] == 'csv':
         spectral_data = np.loadtxt(spectrumfile, delimiter=',')
@@ -226,31 +243,31 @@ def load_spectrum_data(spectrumfile, warn=True):
     return spectral_data
 #
 
-'''
-Saves the output of the calculation as text files, either to a local directory or a specified directory.
-
-The output will be saved into a directory, the name of which is determined by the local time when
-the function is called (unless dirname is specified).
-
-The format is space separated data files containing:
-- 1D arrays with the values of l0, dl, and w in files l0.txt, dl.txt, w.txt
-- 2D arrays in a series of files Delta_[INDEX].txt where [INDEX] is the index of w that array corresponds to
-
-If no directory is specified it will by default save to local directory calculations (creating directory if it
-doesn't already exist)
-
-Parameters:
-calc_data - the output of the calculation in the format of delta_integral, [l0, dl, w, A, B, Delta]
-
-spectrum - is the spectra that was input into this calculation, standard format
-
-directory - The path to a directory to save the files (will be created if it doesn't exist), a local directory
-called calculations by default.
-
-dirname - Name of the directory to save the files to, if None (default) will generate a name based
-on the local date and time.
-'''
 def save_calculation(calc_data, spectrum, directory='calculations', dirname=None):
+    '''
+    Saves the output of the calculation as text files, either to a local directory or a
+    specified directory.
+
+    The output will be saved into a directory, the name of which is determined by
+    the local time when the function is called (unless dirname is specified).
+
+    The format is space separated data files containing:
+    - 1D arrays with the values of l0, dl, and w in files l0.txt, dl.txt, w.txt
+    - 2D arrays in a series of files Delta_[INDEX].txt where [INDEX] is the index of w
+      that array corresponds to
+
+    If no directory is specified it will by default save to local directory calculations
+    (creating directory if it doesn't already exist)
+
+    Args:
+        calc_data : the output of the calculation in the format of delta_integral:
+            [l0, dl, w, A, B, Delta^op]
+        spectrum : is the spectra that was input into this calculation, standard format
+        directory : The path to a directory to save the files (will be created if it doesn't
+            exist), a local directory called calculations by default.
+        dirname : Name of the directory to save the files to, if None (default) will
+            generate a name based on the local date and time.
+    '''
     [l0, dl, w, A, B, Delta] = calc_data
     if not exists(directory):
         mkdir(directory)
@@ -267,18 +284,27 @@ def save_calculation(calc_data, spectrum, directory='calculations', dirname=None
         np.savetxt(join(filename, 'Delta_' + str(i) + '.txt'), Delta[:,:,i])
 #
 
-'''
-Multipurpose parallel processing
-
-Takes a function and an array of arguments, evaluates the function with the given arguments for each point,
-processing in parallel using ncores number of parallel processes. Returns the results as a numpy ndarray
-
-args_array is the array of arguments to the input function $func. $func can only accept one argument,
-but it can be a list or tuple
-
-Will display progress if display is True
-'''
 def _multiprocess2D(func, args_array, ncores=4, display=True):
+    '''
+    Multipurpose parallel processing
+
+    Takes a function and an array of arguments, evaluates the function with the given
+    arguments for each point, processing in parallel using ncores number of parallel
+    processes.
+
+    WARNING: needs to be protected by a if __name__ == "__main__" block or else
+    multiprocessing.pool will have problems.
+
+    Args:
+        func : The function to evaluate, can only accept one argument but it can be a list
+            or tuple
+        args_array is the array of arguments to the input function $func.
+        ncores : The number of nodes to pass to multiprocessing.Pool
+        display : Will display progress if true.
+
+    Returns:
+        The results of the calculation as a numpy ndarray.
+    '''
     pool = Pool(nodes=ncores)
     rows = len(args_array)
     cols = len(args_array[0])
@@ -302,8 +328,8 @@ def _multiprocess2D(func, args_array, ncores=4, display=True):
                 print(str(round(100*i/float(rows))) + "% Complete")
         except Exception as e:
             print("Exception in _multiprocessing2D: Cannot Process")
-            print(traceback.print_exc())
             print("_multiprocessing2D: Exiting Process Early")
+            print(e)
             pool.terminate()
             break
     tf = timer()
@@ -314,55 +340,57 @@ def _multiprocess2D(func, args_array, ncores=4, display=True):
     return output
 #
 
-'''
-integrand for a single absorber on the positive side of lambda_0
-
-$l is lambda the integration variable
-$l0 is lambda_0 the center wavelength
-$dl is Delta lambda, the absorber separation
-$w is the Gaussian width of the peaks
-$spectrum is an interpolation function, from data describing the spectrum
-'''
 def _integrand_plus(l, l0, dl, w, spectrum):
+    '''
+    Integrand for a single absorber on the positive side of lambda_0
+
+    Args:
+        l : is lambda the integration variable
+        l0 : is lambda_0 the center wavelength
+        dl : is Delta lambda, the absorber separation
+        w : is the Gaussian width of the peaks
+        spectrum : is an interpolation function, from data describing the spectrum
+    '''
     return spectrum(l)*gauss(l, w, l0 + dl/2)
 #
 
-'''
-integrand for a single absorber on the negative side of lambda_0
-
-$l is lambda the integration variable
-$l0 is lambda_0 the center wavelength
-$dl is Delta lambda, the absorber separation
-$w is the Gaussian width of the peaks
-$spectrum is an interpolation function, from data describing the spectrum
-'''
 def _integrand_minus(l, l0, dl, w, spectrum):
+    '''
+    Integrand for a single absorber on the negative side of lambda_0
+
+    Args:
+        l : is lambda the integration variable
+        l0 : is lambda_0 the center wavelength
+        dl : is Delta lambda, the absorber separation
+        w : is the Gaussian width of the peaks
+        spectrum : is an interpolation function, from data describing the spectrum
+    '''
     return spectrum(l)*gauss(l, w, l0 - dl/2)
 #
 
-'''
-Calculated the power bandwidth, Delta U, for the given spectral data.
-
-Parameters:
-$spectral_data, the spectrum to calculate Delta U for, two columns,
-first column is wavelength, second column is normalized spectral data. Will calculate Delta U over
-the whole range of the spectrum. Spectrum should be fairly free of noise, filter noisy data first.
-
-w is a numpy array containing the peak widths to calculate for
-
-$lstep is the resolution of lambda_0 in nm, default 2 nm
-
-$dlmin, $dlmax, $dlN are the minimum and maximum amounts of Delta lambda to calculate, and
-the number of values to calculate Delta lambda for
-
-Returns:
-Returns an array with parameters and calculated values in the form:
-[l0, dl, w, A, B, Delta]
-Where l0, dl, w are all parameters, and ua, ub, du are the powers in the two channels and
-the power bandwidth respectively as numpy arrays with dl for rows, l0 for columns and w for
-the third axis (2D array is only one values of w is given)
-'''
 def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
+    '''
+    Calculated the power bandwidth optimization parameter for the given spectral data.
+
+    Args:
+    spectral_data : the spectrum to calculate Delta^op for, two columns, first column is
+        wavelength, second column is normalized spectral data. Will calculate Delta^op over
+        the whole range of the spectrum. Spectrum should be fairly free of noise, filter
+        noisy data first.
+    w : a numpy array containing the peak widths to calculate
+    lstep : the resolution of lambda_0 in nm, default 2 nm
+    dlmin : the minimum Delta lambda to calculate
+    dlmax :the maximum Delta lambda to calculate
+    dlN : the number of values to calculate Delta lambda for
+
+    Returns:
+    An array with parameters and calculated values in the form:
+        [l0, dl, w, A, B, Delta^op]
+        Where l0, dl, w are all parameters, and A, B, Delta^op are the powers in the two
+        channels and the power bandwidth optimization parameter respectively as numpy arrays
+        with dl for rows, l0 for columns and w for the third axis (2D array is only one values
+        of w is given)
+    '''
     sx = spectral_data[:,0]
     sy = spectral_data[:,1]
 
@@ -419,19 +447,20 @@ def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
     return [l0, dl, w, ua, ub, du]
 #
 
-'''
-Finds the most topologically prominent minima (of the array summed along the x-axis) of d that divide the map into sections.
-Then finds the local maxima of each section.
-
-Parameters:
-ndivs - The number of divisions to search for
-d - the data to search
-
-Returns:
-divs - the x-axis indices that divide up the array into sections containing maxima
-maxes - a list of tuples (row, col) of the indices of the maxima
-'''
 def _find_maxes_between_mins(ndivs, d):
+    '''
+    Finds the most topologically prominent minima (of the array summed along the x-axis)
+    of d that divide the map into sections. Then finds the local maxima of each section.
+
+    Args:
+        ndivs : The number of divisions to search for
+        d : the data to search
+
+    Returns:
+        A tuple containing (divs, maxes) where:
+            divs is the x-axis indices that divide up the array into sections containing maxima
+            maxes is a list of tuples (row, col) of the indices of the maxima
+    '''
     rows, cols = d.shape
 
     # Find the minima along the x-axis
@@ -461,10 +490,10 @@ def _find_maxes_between_mins(ndivs, d):
     return divs, maxes
 # end _find_maxes_between_mins
 
-'''
-Command prompt yes or no question
-'''
 def _yes_or_no(question):
+    '''
+    Command prompt yes or no question
+    '''
     while "the answer is invalid":
         reply = str(input(question+' (y/n): ')).lower().strip()
         if reply[:1] == 'y':
