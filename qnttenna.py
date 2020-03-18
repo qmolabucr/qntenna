@@ -34,11 +34,12 @@ from scipy.interpolate import interp1d
 from scipy.signal import argrelmin, peak_prominences
 
 from pathos.multiprocessing import ProcessingPool as Pool
+from pathos.helpers import freeze_support
 
 import datetime
 from timeit import default_timer as timer
 from os.path import join, exists
-from os import mkdir
+from os import makedirs
 import argparse
 
 __version__ = 1.1
@@ -241,7 +242,7 @@ def load_spectrum_data(spectrumfile, warn=True):
     return spectral_data
 #
 
-def save_calculation(calc_data, spectrum, directory='calculations', dirname=None):
+def save_calculation(calc_data, spectrum, directory=None):
     '''
     Saves the output of the calculation as text files, either to a local directory or a
     specified directory.
@@ -262,18 +263,17 @@ def save_calculation(calc_data, spectrum, directory='calculations', dirname=None
             [l0, dl, w, A, B, Delta^op]
         spectrum : is the spectra that was input into this calculation, standard format
         directory : The path to a directory to save the files (will be created if it doesn't
-            exist), a local directory called calculations by default.
-        dirname : Name of the directory to save the files to, if None (default) will
-            generate a name based on the local date and time.
+            exist), by default a local directory called calculations with an automatically
+            generated subfolder based on the local date and time.
     '''
     [l0, dl, w, Delta] = calc_data
-    if not exists(directory):
-        mkdir(directory)
-    if dirname is None:
+    if directory is None:
         dirname = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
-    filename = join(directory, dirname)
+        filename = join('calculations', dirname)
+    else:
+        filename = directory
     if not exists(filename):
-        mkdir(filename)
+        makedirs(filename)
     np.savetxt(join(filename, 'l0.txt'), l0)
     np.savetxt(join(filename, 'dl.txt'), dl)
     np.savetxt(join(filename, 'w.txt'), w)
@@ -362,45 +362,95 @@ def _multiprocess2D(func, args_array, ncores=4, display=True):
         except Exception as e:
             print("Exception in _multiprocessing2D: Cannot Process")
             print("_multiprocessing2D: Exiting Process Early")
-            print(e)
             pool.terminate()
-            break
+            raise e
     tf = timer()
     if display:
         print(" ")
         dt = tf-t0
         print("Computations Completed in: " + str(datetime.timedelta(seconds=dt)))
-    pool.clear() # Because pathos is designed to leave Pools running, and sometimes doesn't get rid of them after the caluculation is complete
     return output
 #
 
-def _integrand_plus(l, l0, dl, w, spectrum):
+class _integrator():
     '''
-    Integrand for a single absorber on the positive side of lambda_0
+    Integration implemented as a class to prevents some issues from occuring in parallel
+    processing. For info see this thread: https://github.com/uqfoundation/pathos/issues/118
+    '''
+    def __init__(self, w, spectrum):
+        self.integral = quad
+        self.w = w
+        self.spectrum = spectrum
+        self.sqrt = np.sqrt
+        self.exp = np.exp
+        self.pi = np.pi
+    #
 
-    Args:
-        l : is lambda the integration variable
-        l0 : is lambda_0 the center wavelength
-        dl : is Delta lambda, the absorber separation
-        w : is the Gaussian width of the peaks
-        spectrum : is an interpolation function, from data describing the spectrum
-    '''
-    return spectrum(l)*gauss(l, w, l0 + dl/2)
-#
+    def setw(self, w):
+        self.w = w
+    #
 
-def _integrand_minus(l, l0, dl, w, spectrum):
-    '''
-    Integrand for a single absorber on the negative side of lambda_0
+    def _gauss(self, l, w, l0):
+        '''
+        Gaussian profile of an absorbing channel used in the Noisy Antenna Model:
+             1
+        ------------ exp[-(l-l0)^2 / w^2]
+        w*\sqrt(2*pi)
 
-    Args:
-        l : is lambda the integration variable
-        l0 : is lambda_0 the center wavelength
-        dl : is Delta lambda, the absorber separation
-        w : is the Gaussian width of the peaks
-        spectrum : is an interpolation function, from data describing the spectrum
-    '''
-    return spectrum(l)*gauss(l, w, l0 - dl/2)
-#
+        Args:
+            l : numpy array of wavelength values to calculate over
+            l0 : the center wavelength of the Gaussian
+            w : the width of the Gaussian
+
+        Returns:
+            Numpy array containing the Gaussian profile of an absorbing channel.
+        '''
+        return (1.0/(w*self.sqrt(2*self.pi)))*self.exp(-1.0*((l-l0)/w)**2)
+    #
+
+    def _integrand_plus(self, l, l0, dl):
+        '''
+        Integrand for a single absorber on the positive side of lambda_0
+
+        Args:
+            l : is lambda the integration variable
+            l0 : is lambda_0 the center wavelength
+            dl : is Delta lambda, the absorber separation
+            spectrum : is an interpolation function, from data describing the spectrum
+        '''
+        return self.spectrum(l)*self._gauss(l, self.w, l0 + dl/2)
+    #
+
+    def _integrand_minus(self, l, l0, dl):
+        '''
+        Integrand for a single absorber on the negative side of lambda_0
+
+        Args:
+            l : is lambda the integration variable
+            l0 : is lambda_0 the center wavelength
+            dl : is Delta lambda, the absorber separation
+            spectrum : is an interpolation function, from data describing the spectrum
+        '''
+        return self.spectrum(l)*self._gauss(l, self.w, l0 - dl/2)
+    #
+
+    def ua_integral(self, arg):
+        l0 = arg[0]
+        dl = arg[1]
+        a = l0 - 2*self.w
+        b = l0 + 2*self.w
+        y = self.integral(self._integrand_plus, a, b, args=(l0, dl), full_output=1)
+        return y[0]
+    # end ua
+
+    def ub_integral(self, arg):
+        l0 = arg[0]
+        dl = arg[1]
+        a = l0 - 2*self.w
+        b = l0 + 2*self.w
+        y = self.integral(self._integrand_minus, a, b, args=(l0, dl), full_output=1)
+        return y[0]
+    # end ub
 
 def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
     '''
@@ -442,40 +492,22 @@ def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
         for j in range(cols):
             args_array[i].append([l0[j], dl[i]])
 
+    int = _integrator(w[0], spectrum)
+
     # Loop over values of w
     t0 = timer()
 
     for i in range(N):
-        # Functions to integrate
-        def ua_integral(arg):
-            l0 = arg[0]
-            dl = arg[1]
-            a = l0 - 2*w[i]
-            b = l0 + 2*w[i]
-            y = quad(_integrand_plus, a, b, args=(l0, dl, w[i], spectrum), full_output=1)
-            return y[0]
-        # end ua
-
-        def ub_integral(arg):
-            l0 = arg[0]
-            dl = arg[1]
-            a = l0 - 2*w[i]
-            b = l0 + 2*w[i]
-            y = quad(_integrand_minus, a, b, args=(l0, dl, w[i], spectrum), full_output=1)
-            return y[0]
-        # end ub
-
         ts = timer()
-
-        ua[:,:,i] = _multiprocess2D(ua_integral, args_array, ncores=ncores, display=False)
-        ub[:,:,i] = _multiprocess2D(ub_integral, args_array, ncores=ncores, display=False)
-
+        int.setw(w[i])
+        ua[:,:,i] = _multiprocess2D(int.ua_integral, args_array, ncores=ncores, display=False)
+        ub[:,:,i] = _multiprocess2D(int.ub_integral, args_array, ncores=ncores, display=False)
         for ii in range(rows):
             for jj in range(cols):
                 du[ii,jj,i] = np.abs(ua[ii,jj,i] - ub[ii,jj,i])
-
         tf = timer()
         print(str(i+1)+'/'+str(N)+' complete ' + str(datetime.timedelta(seconds=tf-ts)))
+    Pool(nodes=ncores).clear() # Because pathos is designed to leave Pools running, and sometimes doesn't get rid of them after the caluculation is complete
     print('Calculations Complete in ' + str(datetime.timedelta(seconds=tf-t0)))
     return [l0, dl, w, du]
 #
@@ -537,6 +569,8 @@ def _yes_or_no(question):
 # end _yes_or_no
 
 if __name__ == "__main__":
+    freeze_support() # To prevent pathos from having issues when run from windows command line
+
     parser = argparse.ArgumentParser()
     parser.add_argument("path", help="Path to the spectral data file")
     parser.add_argument("-sf", "--savefile", help="Path to directory to save output files, by default will save to local calculations directory")
@@ -556,7 +590,7 @@ if __name__ == "__main__":
     else:
         if not exists(args.savefile):
             if _yes_or_no(args.savefile + " does not exist. Create directory?"):
-                mkdir(args.savefile)
+                makedirs(args.savefile)
             else:
                 print("Invalid savefile, using default savefile")
                 autosave = True
@@ -575,7 +609,7 @@ if __name__ == "__main__":
     if args.wnumber is None:
         wN = 6
     else:
-        wN = float(args.wnumber)
+        wN = int(args.wnumber)
 
     if w1 == w2:
         wN = 1

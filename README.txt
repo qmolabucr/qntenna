@@ -16,8 +16,8 @@ DESCRIPTION:
 
 This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra'
 and performs calculations described in that paper. The main result is taking an input solar spectrum and calculating
-the ideal absorption peaks for a two channel absorber by quieting a noisy antenna and optimizing power bandwidth.
-See the paper for model details.
+the ideal absorption peaks for a two channel absorber by quieting a noisy antenna while optimizing power bandwidth.
+See the paper, especially the supplementary materials, for model details.
 
 For any non-ideal spectrum the optimization calculation is nontrivial, especially at small w. There may be multiple
 solutions that are nearly degenerate, or spurious solutions not allowed due to operable bandwidth considerations.
@@ -97,7 +97,7 @@ We have included a python script called preprocess_spectrum.py that will prepare
 
 We have included several data files in the 'spectra' folder.
 - 'BB-5500K.txt' the spectrum of a blackbody at T = 5500 K, for testing.
-- 'NREL-full.txt', 'leaffilter3.txt' and '2munderwater.txt' spectra were used to calculate the results in Fig. 2G, H, I respectively.
+- 'NREL-full.txt', 'leaffilter3.txt' and '2munderwater.txt' spectra were used to calculate the results in Fig. 2G, H, I of the paper respectively.
 - 'NREL-visible.txt' which is also the NREL ASTM ETR spectrum but restricted to the visible range
 In addition in the subfolder "raw_spectra" there are several unfiltered data files used to generate the above spectra and show the
 underwater solar spectra shown in Fig 4A. References for data can be found in the main text of the paper and a description
@@ -106,9 +106,9 @@ of how the leaffilter3 data was obtained and the underwater data was calculated 
 CODING INSTRUCTIONS:
 
 Users proficient at coding may wish to incorporate the qnttenna.py module into their own scripts.
-qnttenna.py module contains four public functions (following the standard conventions  that function names
+qnttenna.py module contains six public functions (following the standard conventions  that function names
 beginning with an underscore are considered private). Below are the basic descriptions of these functions,
-for more details look at the comments in qnttenna.py
+for more details look at the docstrings in qnttenna.py
 
 NOTE: Given that qnttenna.py uses the pathos.multiprocess module, a form of python's multiprocessing module,
 the calculation is unstable outside an "if __name__ == 'main'" block. If delta_integral starts throwing weird

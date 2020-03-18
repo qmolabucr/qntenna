@@ -39,12 +39,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     directory = args.savefile
 
-    xinches = 5.0
-    yinches = 8.75
+    xinches = 5.3
+    yinches = 7.75
     fig1 = plt.figure(directory+' Delta', figsize=(xinches, yinches), facecolor='w')
 
-    width = 3.75
-    xmargin = 0.7
+    width = 3.25
+    xmargin = 1.0
     height = width
     ymargin = 0.5
     yint = 0.5
@@ -65,8 +65,6 @@ if __name__ == '__main__':
     else:
         npeaks = int(args.npeaks)
 
-    clrs = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
-
     peak = find_optimum_peaks(l0, dl, w, Delta, npeaks)
     wi = np.searchsorted(w, display_width)
 
@@ -84,7 +82,7 @@ if __name__ == '__main__':
     # np.flipud is used to get the vertical axis into the normal orientation
     ax1.imshow(np.flipud(d), cmap=cmap, norm=cnorm, extent=(np.min(l0), np.max(l0), np.min(dl), np.max(dl)), aspect='auto')
     for j in range(npeaks):
-        ax1.plot(peak[j][wi,1], peak[j][wi,2], 'o', c=clrs[j])
+        ax1.plot(peak[j][wi,1], peak[j][wi,2], 'o', c='C'+str(j))
 
     ax1.set_ylabel(r'$\Delta \lambda$ (nm)')
     ax1.set_xlabel(r'$\lambda_{0}$ (nm)')
@@ -107,10 +105,10 @@ if __name__ == '__main__':
     xs = np.linspace(np.min(l0), np.max(l0), 400)
     norm = w[wi]*np.sqrt(2*np.pi)
     for j in range(npeaks):
-        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]-peak[j][wi,2]/2), color=clrs[j])
-        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]+peak[j][wi,2]/2), color=clrs[j])
-        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.12, r'$\lambda_0 = $' + str(peak[j][wi,1]) + ' nm', color=clrs[j], ha='left')
-        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.07, r'$\Delta \lambda = $' + str(peak[j][wi,2]) + ' nm', color=clrs[j], ha='left')
+        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]-peak[j][wi,2]/2), color='C'+str(j))
+        ax2.plot(xs, norm*gauss(xs, w[wi], peak[j][wi,1]+peak[j][wi,2]/2), color='C'+str(j))
+        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.12, r'$\lambda_0 = $' + str(peak[j][wi,1]) + ' nm', color='C'+str(j), ha='left')
+        ax2.text(peak[j][wi,1]-peak[j][wi,2]/2, 1.07, r'$\Delta \lambda = $' + str(peak[j][wi,2]) + ' nm', color='C'+str(j), ha='left')
     ax2.text(0.5, 0.95, r'w = '+ str(w[wi]) + ' nm', color='black', ha='center', transform=ax2.transAxes)
 
     ax2.set_xlim(np.min(l0), np.max(l0))
