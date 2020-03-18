@@ -132,4 +132,7 @@ Loads a spectrum file that is in standard format (see input data format above) a
 long or in the wrong format.
 
 save_calculation(calc_data, spectrum):
-Saves the output of the calculation as text files, either to a local directory or a specified directory.
+Saves the output of the calculation as text files, to either a local "calculations" directory or a specified directory.
+
+load_calculation(directory):
+Loads the output of the calculation as text files, from either a local "calculations" directory or a specified directory.

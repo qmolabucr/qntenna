@@ -21,6 +21,7 @@ See accompanying README.txt for instructions on using this code
 '''
 
 from qnttenna import delta_integral, find_optimum_peaks, gauss
+from qnttenna import load_calculation
 
 from matplotlib.colorbar import ColorbarBase
 import matplotlib.colors as colors
@@ -49,7 +50,8 @@ if __name__ == '__main__':
     spectrumfile = join('spectra', 'BB-5500K.txt')
 
     calc_data, spectrum = delta_integral(spectrumfile, [10, 15, 25], autosave=False)
-    [l0, dl, w, A, B, Delta] = calc_data
+    #calc_data, spectrum = load_calculation('2020-03-17-175531')
+    [l0, dl, w, Delta] = calc_data
 
     pk1, pk2 = find_optimum_peaks(l0, dl, w, Delta, 2)
 

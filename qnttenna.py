@@ -43,7 +43,6 @@ import argparse
 
 __version__ = 1.1
 
-
 def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=False, optimize=True, warning=True):
     '''
     Calculates the Delta^op value described in 'Quieting a noisy antenna reproduces
@@ -84,10 +83,9 @@ def delta_integral(spectrumfile, w, lambda_0=None, delta_lambda=None, autosave=F
 
     Returns:
         A tuple containing the calulated values and spectrum data, (calc_data, spectrum_data).
-            Where the calc_data is an array with [l0, dl, w, A, B, Delta^op].
-            Where l0, dl, w are all parameters, and A, B, Delta are the powers in
-            the two channels and the power bandwidth respectively as 3D numpy
-            arrays with dl for rows, l0 for columns and w for the third axis.
+            Where the calc_data is an array with [l0, dl, w, Delta^op].
+            Where l0, dl, w are all parameters, and Delta^op is the power bandwidth as a
+            3D numpy arrays with dl for rows, l0 for columns and w for the third axis.
     '''
     spectral_data = load_spectrum_data(spectrumfile, warn=warning)
 
@@ -268,7 +266,7 @@ def save_calculation(calc_data, spectrum, directory='calculations', dirname=None
         dirname : Name of the directory to save the files to, if None (default) will
             generate a name based on the local date and time.
     '''
-    [l0, dl, w, A, B, Delta] = calc_data
+    [l0, dl, w, Delta] = calc_data
     if not exists(directory):
         mkdir(directory)
     if dirname is None:
@@ -282,6 +280,41 @@ def save_calculation(calc_data, spectrum, directory='calculations', dirname=None
     np.savetxt(join(filename, 'spectrum.txt'), spectrum)
     for i in range(len(w)):
         np.savetxt(join(filename, 'Delta_' + str(i) + '.txt'), Delta[:,:,i])
+#
+
+def load_calculation(directory):
+    '''
+    Loads the calculation data found in directory, saved in the standard format by
+    qnttenna.save_calculation. If it can't find the directory will search local 'calculations'
+    directory for autosave.
+
+    Returns:
+        A tuple containing the calulated values and spectrum data, (calc_data, spectrum_data).
+            calc_data is an array with [l0, dl, w, Delta^op]. Where l0, dl, w are all
+            parameters, and Delta^op is the power bandwidth as 3D numpy array with dl for
+            rows, l0 for columns and w for the third axis.
+    '''
+    if not exists(directory):
+        if exists(join('calculations', directory)):
+            directory = join('calculations', directory)
+        else:
+            print('Error could not find ' + str(directory))
+            return
+    l0 = np.loadtxt(join(directory, 'l0.txt'))
+    dl = np.loadtxt(join(directory, 'dl.txt'))
+    w = np.loadtxt(join(directory, 'w.txt'))
+    try: # Fix issue with calculations of a single w value
+        w[0]
+    except IndexError:
+        w = np.array([w])
+    spectrum = np.loadtxt(join(directory, 'spectrum.txt'))
+    rows = dl.size
+    cols = l0.size
+    N = w.size
+    Delta = np.zeros((rows, cols, N))
+    for i in range(N):
+        Delta[:,:,i] = np.loadtxt(join(directory, 'Delta_' + str(i) + '.txt'))
+    return [l0, dl, w, Delta], spectrum
 #
 
 def _multiprocess2D(func, args_array, ncores=4, display=True):
@@ -337,6 +370,7 @@ def _multiprocess2D(func, args_array, ncores=4, display=True):
         print(" ")
         dt = tf-t0
         print("Computations Completed in: " + str(datetime.timedelta(seconds=dt)))
+    pool.clear() # Because pathos is designed to leave Pools running, and sometimes doesn't get rid of them after the caluculation is complete
     return output
 #
 
@@ -385,11 +419,10 @@ def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
 
     Returns:
     An array with parameters and calculated values in the form:
-        [l0, dl, w, A, B, Delta^op]
-        Where l0, dl, w are all parameters, and A, B, Delta^op are the powers in the two
-        channels and the power bandwidth optimization parameter respectively as numpy arrays
-        with dl for rows, l0 for columns and w for the third axis (2D array is only one values
-        of w is given)
+        [l0, dl, w, Delta^op]
+        Where l0, dl, w are all parameters, and Delta^op is the power bandwidth optimization
+        parameter respectively as numpy arrays with dl for rows, l0 for columns and w for
+        the third axis (2D array is only one values of w is given)
     '''
     sx = spectral_data[:,0]
     sy = spectral_data[:,1]
@@ -444,7 +477,7 @@ def _power_bandwidth_variance(spectral_data, l0, dl, w, ncores=8):
         tf = timer()
         print(str(i+1)+'/'+str(N)+' complete ' + str(datetime.timedelta(seconds=tf-ts)))
     print('Calculations Complete in ' + str(datetime.timedelta(seconds=tf-t0)))
-    return [l0, dl, w, ua, ub, du]
+    return [l0, dl, w, du]
 #
 
 def _find_maxes_between_mins(ndivs, d):
