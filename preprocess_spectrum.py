@@ -22,7 +22,7 @@ See accompanying README.txt for instructions on using this code
 import numpy as np
 from matplotlib import pyplot as plt
 
-from qnttenna import load_spectrum_data, _yes_or_no
+from qntenna import load_spectrum_data, _yes_or_no
 
 from scipy.signal import butter, filtfilt
 

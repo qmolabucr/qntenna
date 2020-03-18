@@ -14,14 +14,14 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
-A testing script for qnttenna module. Displays the output of a Delta calculation for a solar spectrum
+A testing script for qntenna module. Displays the output of a Delta calculation for a solar spectrum
 given by a 5500K ideal blackbody spectrum.
 
 See accompanying README.txt for instructions on using this code
 '''
 
-from qnttenna import delta_integral, find_optimum_peaks, gauss
-from qnttenna import load_calculation
+from qntenna import delta_integral, find_optimum_peaks, gauss
+from qntenna import load_calculation
 
 from matplotlib.colorbar import ColorbarBase
 import matplotlib.colors as colors

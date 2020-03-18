@@ -1,4 +1,4 @@
-Instructions for using the qnttenna.py code
+Instructions for using the qntenna.py code
 
 version 1.1
 last updated: March 2020
@@ -26,50 +26,50 @@ this calculation before using this code.
 
 INSTALLATION INSTRUCTIONS:
 
-qnttenna requires python (version 3) and the following python packages:
+qntenna requires python (version 3) and the following python packages:
 
 numpy version 1.13+
 scipy version 1.1+
 pathos version 0.2+
-matplotlib 2.0+ (for display scripts, not required for qnttenna module, but recommended)
+matplotlib 2.0+ (for display scripts, not required for qntenna module, but recommended)
 
 All of these can be installed using python's pip package manager.
 
-To test the installation run the blackbody_qnttenna.py program from the command line,
-> python blackbody_qnttenna.py
+To test the installation run the blackbody_qntenna.py program from the command line,
+> python blackbody_qntenna.py
 if it completes and displays the Delta calculation for the blackbody spectrum then the installation is working.
 
 COMMAND LINE INTERFACE INSTRUCTIONS:
 
-qnttenna.py was written with a command line interface, full options can be seen using:
-> python qnttenna.py -h
+qntenna.py was written with a command line interface, full options can be seen using:
+> python qntenna.py -h
 The most basic use of the program is to process a file of spectrum data (see data format below). For example,
 to process the included NREL-etr.txt file use the following command:
-> python qnttenna.py spectra\NREL-etr-visible.txt
+> python qntenna.py spectra\NREL-etr-visible.txt
 This will perform the calculation for absorber widths of 5,10,15,20,25,30 nanometers.
 
 To specify a different range of spectral widths use the -w1, -w2 and -wn arguments, which define a range in w [w1,w2] with
 wn values including the endpoints. For example, to perform the calculation for w = 5,6,7,8,9,10 nm, use the following command:
->python qnttenna.py spectra\NREL-etr-visible.txt -w1 5 -w2 10 -wn 6
+>python qntenna.py spectra\NREL-etr-visible.txt -w1 5 -w2 10 -wn 6
 
 To perform the calculation for a single absorber width simply set -w1 and -w2 to the same value, for example for w = 5.5
-> python qnttenna.py spectra\NREL-etr-visible.txt -w1 5.5 -w2 5.5
+> python qntenna.py spectra\NREL-etr-visible.txt -w1 5.5 -w2 5.5
 
 By default, the output will be saved to a local 'calculations' directory with a filename based on the date and time of the
 calculation. To save to a different directory use the following argument:
-> python qnttenna.py spectra\NREL-etr-visible.txt -sf PATH\TO\SAVE\DIRECTORY
+> python qntenna.py spectra\NREL-etr-visible.txt -sf PATH\TO\SAVE\DIRECTORY
 
-In addition to qnttenna.py four other python scripts were included
+In addition to qntenna.py four other python scripts were included
 
-- blackbody_qnttenna.py : A script that calculates and displays the results for a blackbody spectrum. Use this to test
+- blackbody_qntenna.py : A script that calculates and displays the results for a blackbody spectrum. Use this to test
 the installation, as follows:
-> python blackbody_qnttenna.py
+> python blackbody_qntenna.py
 
 - load_saved_calculation.py : A script to load and display the output of the calculation. Use as follows:
 > python load_saved_calculation.py PATH\TO\SAVE\DIRECTORY -w WIDTH
 
 - preprocess_spectrum.py : A script to process spectral data to make the calculation faster. Spectral datafiles with
-more than 1000 data points may take a long time to compute. qnttenna.py will display a warning for long data files.
+more than 1000 data points may take a long time to compute. qntenna.py will display a warning for long data files.
 If the user doesn't want long processing times, we've included a script that will process spectral data to make it
 faster. There are several options, all of which can be viewed using
 > python preprocess_spectrum.py -h
@@ -105,12 +105,12 @@ of how the leaffilter3 data was obtained and the underwater data was calculated 
 
 CODING INSTRUCTIONS:
 
-Users proficient at coding may wish to incorporate the qnttenna.py module into their own scripts.
-qnttenna.py module contains six public functions (following the standard conventions  that function names
+Users proficient at coding may wish to incorporate the qntenna.py module into their own scripts.
+qntenna.py module contains six public functions (following the standard conventions  that function names
 beginning with an underscore are considered private). Below are the basic descriptions of these functions,
-for more details look at the docstrings in qnttenna.py
+for more details look at the docstrings in qntenna.py
 
-NOTE: Given that qnttenna.py uses the pathos.multiprocess module, a form of python's multiprocessing module,
+NOTE: Given that qntenna.py uses the pathos.multiprocess module, a form of python's multiprocessing module,
 the calculation is unstable outside an "if __name__ == 'main'" block. If delta_integral starts throwing weird
 errors check that it is inside an "if __name__ == 'main'".
 

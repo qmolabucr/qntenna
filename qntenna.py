@@ -1,5 +1,5 @@
 '''
-qnttenna.py
+qntenna.py
 
 version 1.1
 last updated: March 2020
@@ -285,7 +285,7 @@ def save_calculation(calc_data, spectrum, directory=None):
 def load_calculation(directory):
     '''
     Loads the calculation data found in directory, saved in the standard format by
-    qnttenna.save_calculation. If it can't find the directory will search local 'calculations'
+    qntenna.save_calculation. If it can't find the directory will search local 'calculations'
     directory for autosave.
 
     Returns:
