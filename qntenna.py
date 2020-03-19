@@ -14,12 +14,12 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Description:
-This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic lightharvesting
+This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic light harvesting
 spectra' and performs calculations described in that paper. The main result is taking an input solar
 spectrum and calculating the ideal absorption peaks for a two channel absorber by quieting a noisy
 antenna and optimizing power bandwidth. See paper for details.
 
-See accompanying README.txt for instructions on using this code
+See accompanying README.txt for instructions on using this code.
 
 Software Dependencies:
 Python version 3.5+

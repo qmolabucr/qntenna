@@ -14,7 +14,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DESCRIPTION:
 
-This code is published alongside 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra'
+This code is published alongside the paper 'Quieting a noisy antenna reproduces photosynthetic light harvesting spectra'
 and performs calculations described in that paper. The main result is taking an input solar spectrum and calculating
 the ideal absorption peaks for a two channel absorber by quieting a noisy antenna while optimizing power bandwidth.
 See the paper, especially the supplementary materials, for model details.

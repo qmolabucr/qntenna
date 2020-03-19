@@ -17,7 +17,7 @@ Description:
 A testing script for qntenna module. Displays the output of a Delta calculation for a solar spectrum
 given by a 5500K ideal blackbody spectrum.
 
-See accompanying README.txt for instructions on using this code
+See accompanying README.txt for instructions on using this code.
 '''
 
 from qntenna import delta_integral, find_optimum_peaks, gauss

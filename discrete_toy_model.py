@@ -17,7 +17,7 @@ Description:
 A visualization of a simple discrete model of a finite number of absorbers, see section S1.3 of the
 supplementary materials for more information.
 
-See accompanying README.txt for instructions on using this code
+See accompanying README.txt for instructions on using this code.
 '''
 
 import numpy as np

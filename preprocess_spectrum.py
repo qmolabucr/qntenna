@@ -16,7 +16,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Description:
 A script to pre-process spectra to make them better suited for speedy qntenna.py calculations
 
-See accompanying README.txt for instructions on using this code
+See accompanying README.txt for instructions on using this code.
 '''
 
 import numpy as np
